@@ -29,6 +29,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"sync"
@@ -134,6 +135,7 @@ func (sl *LeaserCheckpointer) StoreExists(ctx context.Context) (bool, error) {
 		Prefix: sl.containerName,
 	}
 	res, err := sl.serviceURL.ListContainersSegment(ctx, azblob.Marker{}, opts)
+	fmt.Printf("\nResponse from ListContainersSegment: %+v\n", res)
 	if err != nil {
 		return false, err
 	}
