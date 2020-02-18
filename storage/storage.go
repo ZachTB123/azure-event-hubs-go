@@ -52,7 +52,7 @@ type (
 	LeaserCheckpointer struct {
 		// LeasePersistenceInterval is the default period of time which dirty leases will be persisted to Azure Storage
 		LeasePersistenceInterval time.Duration
-		Logger 					 *logrus.Entry
+		Logger                   *logrus.Entry
 		leases                   map[string]*storageLease
 		processor                *eph.EventProcessorHost
 		leaseDuration            time.Duration
@@ -112,7 +112,7 @@ func NewStorageLeaserCheckpointer(credential Credential, accountName, containerN
 	containerURL := svURL.NewContainerURL(containerName)
 
 	return &LeaserCheckpointer{
-		Logger: 				  logrus.NewEntry(logger),
+		Logger:                   logrus.NewEntry(logger),
 		credential:               credential,
 		containerName:            containerName,
 		accountName:              accountName,
