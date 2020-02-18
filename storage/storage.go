@@ -29,9 +29,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -135,7 +135,6 @@ func (sl *LeaserCheckpointer) StoreExists(ctx context.Context) (bool, error) {
 		Prefix: sl.containerName,
 	}
 	res, err := sl.serviceURL.ListContainersSegment(ctx, azblob.Marker{}, opts)
-	fmt.Printf("\nResponse from ListContainersSegment: %+v\n", res)
 	if err != nil {
 		return false, err
 	}
@@ -164,6 +163,10 @@ func (sl *LeaserCheckpointer) EnsureStore(ctx context.Context) error {
 		containerURL := sl.serviceURL.NewContainerURL(sl.containerName)
 		_, err := containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessNone)
 		if err != nil {
+			if strings.Contains(err.Error(), "RESPONSE Status: 409 The specified container already exists.") {
+				// Don't return an error if the container already exists
+				return nil
+			}
 			return err
 		}
 		sl.containerURL = &containerURL
