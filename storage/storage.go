@@ -29,6 +29,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/url"
 	"strings"
@@ -51,6 +52,7 @@ type (
 	LeaserCheckpointer struct {
 		// LeasePersistenceInterval is the default period of time which dirty leases will be persisted to Azure Storage
 		LeasePersistenceInterval time.Duration
+		Logger 					 *logrus.Entry
 		leases                   map[string]*storageLease
 		processor                *eph.EventProcessorHost
 		leaseDuration            time.Duration
@@ -101,10 +103,16 @@ func NewStorageLeaserCheckpointer(credential Credential, accountName, containerN
 		return nil, err
 	}
 
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetReportCaller(true)
+	logger.SetLevel(logrus.InfoLevel)
+
 	svURL := azblob.NewServiceURL(*storageURL, azblob.NewPipeline(credential, azblob.PipelineOptions{}))
 	containerURL := svURL.NewContainerURL(containerName)
 
 	return &LeaserCheckpointer{
+		Logger: 				  logrus.NewEntry(logger),
 		credential:               credential,
 		containerName:            containerName,
 		accountName:              accountName,
@@ -165,6 +173,7 @@ func (sl *LeaserCheckpointer) EnsureStore(ctx context.Context) error {
 		if err != nil {
 			if strings.Contains(err.Error(), "RESPONSE Status: 409 The specified container already exists.") {
 				// Don't return an error if the container already exists
+				sl.Logger.WithError(err).Warnf("Storage Container %s already exists", sl.containerName)
 				return nil
 			}
 			return err
