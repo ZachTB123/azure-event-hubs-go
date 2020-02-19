@@ -167,16 +167,15 @@ func (sl *LeaserCheckpointer) EnsureStore(ctx context.Context) error {
 		return err
 	}
 
+	sl.Logger.Infof("Container exists: %v", ok)
+
 	if !ok {
 		containerURL := sl.serviceURL.NewContainerURL(sl.containerName)
 		_, err := containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessNone)
-		if err != nil {
-			if strings.Contains(err.Error(), "RESPONSE Status: 409 The specified container already exists.") {
-				// Don't return an error if the container already exists
-				sl.Logger.WithError(err).Warnf("Storage Container %s already exists", sl.containerName)
-				return nil
-			}
+		if err != nil && !strings.Contains(err.Error(), "ContainerAlreadyExists") {
 			return err
+		} else {
+			sl.Logger.WithError(err).Warn("Container already exists")
 		}
 		sl.containerURL = &containerURL
 	}
